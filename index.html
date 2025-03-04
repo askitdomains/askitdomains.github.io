@@ -52,7 +52,17 @@
         }
 
         function signIn() {
+            // ✅ Store login state before redirect
+            localStorage.setItem("loginPending", "true");
             window.location.href = `${backendUrl}/login`;
+        }
+
+        function checkLoginStatus() {
+            if (localStorage.getItem("loginPending") === "true") {
+                // ✅ If redirected back, mark login as complete
+                localStorage.removeItem("loginPending");
+                document.getElementById("scanBtn").classList.remove("hidden");
+            }
         }
 
         function scanEmails() {
@@ -64,8 +74,8 @@
 
                 data.scam_emails.forEach(email => {
                     let row = emailsBody.insertRow();
-                    row.insertCell(0).innerText = email.from;
-                    row.insertCell(1).innerText = email.subject;
+                    row.insertCell(0).innerText = email.from || "Unknown Sender";
+                    row.insertCell(1).innerText = email.subject || "No Subject";
                     let deleteButton = document.createElement("button");
                     deleteButton.innerText = "🗑️ Delete";
                     deleteButton.onclick = function() { confirmDeleteEmail(email.id, row); };
@@ -96,6 +106,9 @@
             })
             .catch(error => console.error('Error:', error));
         }
+
+        // ✅ Check if user is logging in after redirect
+        checkLoginStatus();
     </script>
 
 </body>
