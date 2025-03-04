@@ -69,7 +69,7 @@
         }
 
         function scanEmails() {
-            fetch(`${backendUrl}/scan_email`)
+            fetch(`https://botnet-1.onrender.com/scan_email`)
             .then(response => response.json())
             .then(data => alert(data.message || "Scam emails found!"));
         }
