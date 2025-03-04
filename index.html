@@ -5,6 +5,39 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Scam Protector</title>
     <script src="https://accounts.google.com/gsi/client" async defer></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            margin: 20px;
+        }
+        input {
+            width: 80%;
+            padding: 10px;
+            margin: 10px 0;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+        button {
+            padding: 10px 20px;
+            background-color: #28a745;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #218838;
+        }
+        .error {
+            color: red;
+            font-weight: bold;
+        }
+        .success {
+            color: green;
+            font-weight: bold;
+        }
+    </style>
 </head>
 <body>
     <h2>Check URL for Scam</h2>
@@ -22,25 +55,44 @@
     <script>
         function checkURL() {
             let url = document.getElementById("urlInput").value;
+            let resultElement = document.getElementById("result");
+
+            if (!url) {
+                resultElement.innerHTML = "<span class='error'>Please enter a URL.</span>";
+                return;
+            }
+
             fetch('https://botnet-1.onrender.com/check_url', {
                 method: 'POST',
                 headers: {'Content-Type': 'application/json'},
                 body: JSON.stringify({url: url})
             })
             .then(response => response.json())
-            .then(data => document.getElementById("result").innerText = data.message)
-            .catch(error => console.error('Error:', error));
+            .then(data => {
+                if (data.message.includes("Warning")) {
+                    resultElement.innerHTML = `<span class='error'>${data.message}</span>`;
+                } else {
+                    resultElement.innerHTML = `<span class='success'>${data.message}</span>`;
+                }
+            })
+            .catch(error => {
+                resultElement.innerHTML = "<span class='error'>Error checking URL.</span>";
+                console.error('Error:', error);
+            });
         }
 
         function handleCredentialResponse(response) {
-            fetch('https://botnet-1.onrender.com/authenticate', {
+            fetch('https://botnet-1.onrender.com/login', {
                 method: 'POST',
                 headers: {'Content-Type': 'application/json'},
                 body: JSON.stringify({token: response.credential})
             })
             .then(response => response.json())
             .then(data => alert(data.message))
-            .catch(error => console.error('Error:', error));
+            .catch(error => {
+                alert("Error logging in.");
+                console.error('Error:', error);
+            });
         }
     </script>
 </body>
