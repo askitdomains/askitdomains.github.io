@@ -6,94 +6,97 @@
     <title>Scam Protector</title>
     <script src="https://accounts.google.com/gsi/client" async defer></script>
     <style>
-        body {
-            font-family: Arial, sans-serif;
-            text-align: center;
-            margin: 20px;
-        }
-        input {
-            width: 80%;
-            padding: 10px;
-            margin: 10px 0;
-            border: 1px solid #ccc;
-            border-radius: 5px;
-        }
-        button {
-            padding: 10px 20px;
-            background-color: #28a745;
-            color: white;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-        }
-        button:hover {
-            background-color: #218838;
-        }
-        .error {
-            color: red;
-            font-weight: bold;
-        }
-        .success {
-            color: green;
-            font-weight: bold;
-        }
+        body { font-family: Arial, sans-serif; text-align: center; margin: 20px; }
+        input, button { margin: 10px; padding: 10px; font-size: 16px; }
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        th, td { border: 1px solid black; padding: 8px; text-align: left; }
+        th { background-color: #f2f2f2; }
+        .hidden { display: none; }
     </style>
 </head>
 <body>
+
     <h2>Check URL for Scam</h2>
     <input type="text" id="urlInput" placeholder="Enter URL">
     <button onclick="checkURL()">Check</button>
     <p id="result"></p>
 
-    <h2>Gmail Spam Scanner</h2>
-    <div id="g_id_onload"
-         data-client_id="718374962756-ladog3ejpbb9i1erl3ou0qk7qd4s7hgb.apps.googleusercontent.com"
-         data-callback="handleCredentialResponse">
-    </div>
-    <div class="g_id_signin" data-type="standard"></div>
+    <h2>Gmail Scam Scanner</h2>
+    <button id="signInBtn" onclick="signIn()">🔑 Sign in with Google</button>
+    <button id="scanBtn" onclick="scanEmails()" class="hidden">📩 Scan Emails</button>
+
+    <table id="emailsTable" class="hidden">
+        <thead>
+            <tr>
+                <th>Sender</th>
+                <th>Subject</th>
+                <th>Action</th>
+            </tr>
+        </thead>
+        <tbody id="emailsBody"></tbody>
+    </table>
 
     <script>
+        const backendUrl = "https://botnet-1.onrender.com";
+
         function checkURL() {
             let url = document.getElementById("urlInput").value;
-            let resultElement = document.getElementById("result");
-
-            if (!url) {
-                resultElement.innerHTML = "<span class='error'>Please enter a URL.</span>";
-                return;
-            }
-
-            fetch('https://botnet-1.onrender.com/check_url', {
+            fetch(`${backendUrl}/check_url`, {
                 method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({url: url})
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ url: url })
+            })
+            .then(response => response.json())
+            .then(data => document.getElementById("result").innerText = data.message)
+            .catch(error => console.error('Error:', error));
+        }
+
+        function signIn() {
+            window.location.href = `${backendUrl}/login`;
+        }
+
+        function scanEmails() {
+            fetch(`${backendUrl}/scan_email`)
+            .then(response => response.json())
+            .then(data => {
+                let emailsBody = document.getElementById("emailsBody");
+                emailsBody.innerHTML = "";
+
+                data.scam_emails.forEach(email => {
+                    let row = emailsBody.insertRow();
+                    row.insertCell(0).innerText = email.from;
+                    row.insertCell(1).innerText = email.subject;
+                    let deleteButton = document.createElement("button");
+                    deleteButton.innerText = "🗑️ Delete";
+                    deleteButton.onclick = function() { confirmDeleteEmail(email.id, row); };
+                    row.insertCell(2).appendChild(deleteButton);
+                });
+
+                document.getElementById("emailsTable").classList.remove("hidden");
+            })
+            .catch(error => console.error('Error:', error));
+        }
+
+        function confirmDeleteEmail(emailId, row) {
+            if (confirm("⚠️ Are you sure you want to delete this scam email?")) {
+                deleteEmail(emailId, row);
+            }
+        }
+
+        function deleteEmail(emailId, row) {
+            fetch(`${backendUrl}/delete_email`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email_id: emailId })
             })
             .then(response => response.json())
             .then(data => {
-                if (data.message.includes("Warning")) {
-                    resultElement.innerHTML = `<span class='error'>${data.message}</span>`;
-                } else {
-                    resultElement.innerHTML = `<span class='success'>${data.message}</span>`;
-                }
+                alert(data.message);
+                row.remove();
             })
-            .catch(error => {
-                resultElement.innerHTML = "<span class='error'>Error checking URL.</span>";
-                console.error('Error:', error);
-            });
-        }
-
-        function handleCredentialResponse(response) {
-            fetch('https://botnet-1.onrender.com/login', {
-                method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({token: response.credential})
-            })
-            .then(response => response.json())
-            .then(data => alert(data.message))
-            .catch(error => {
-                alert("Error logging in.");
-                console.error('Error:', error);
-            });
+            .catch(error => console.error('Error:', error));
         }
     </script>
+
 </body>
 </html>
