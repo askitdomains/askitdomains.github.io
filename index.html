@@ -12,9 +12,15 @@
         th, td { border: 1px solid black; padding: 8px; text-align: left; }
         th { background-color: #f2f2f2; }
         .hidden { display: none; }
+        #profile { position: absolute; top: 10px; left: 10px; }
+        #profile img { border-radius: 50%; width: 50px; height: 50px; }
     </style>
 </head>
 <body>
+
+    <div id="profile" class="hidden">
+        <img id="profilePic" src="" alt="User Profile">
+    </div>
 
     <h2>Check URL for Scam</h2>
     <input type="text" id="urlInput" placeholder="Enter URL">
@@ -30,7 +36,6 @@
             <tr>
                 <th>Sender</th>
                 <th>Subject</th>
-                <th>Action</th>
             </tr>
         </thead>
         <tbody id="emailsBody"></tbody>
@@ -39,75 +44,36 @@
     <script>
         const backendUrl = "https://botnet-1.onrender.com";
 
-        function checkURL() {
-            let url = document.getElementById("urlInput").value;
-            fetch(`${backendUrl}/check_url`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ url: url })
-            })
-            .then(response => response.json())
-            .then(data => document.getElementById("result").innerText = data.message)
-            .catch(error => console.error('Error:', error));
-        }
-
         function signIn() {
-            // ✅ Store login state before redirect
             localStorage.setItem("loginPending", "true");
             window.location.href = `${backendUrl}/login`;
         }
 
         function checkLoginStatus() {
             if (localStorage.getItem("loginPending") === "true") {
-                // ✅ If redirected back, mark login as complete
                 localStorage.removeItem("loginPending");
                 document.getElementById("scanBtn").classList.remove("hidden");
+                fetchUserProfile();
             }
+        }
+
+        function fetchUserProfile() {
+            fetch(`${backendUrl}/user`)
+            .then(response => response.json())
+            .then(user => {
+                if (user.picture) {
+                    document.getElementById("profilePic").src = user.picture;
+                    document.getElementById("profile").classList.remove("hidden");
+                }
+            });
         }
 
         function scanEmails() {
             fetch(`${backendUrl}/scan_email`)
             .then(response => response.json())
-            .then(data => {
-                let emailsBody = document.getElementById("emailsBody");
-                emailsBody.innerHTML = "";
-
-                data.scam_emails.forEach(email => {
-                    let row = emailsBody.insertRow();
-                    row.insertCell(0).innerText = email.from || "Unknown Sender";
-                    row.insertCell(1).innerText = email.subject || "No Subject";
-                    let deleteButton = document.createElement("button");
-                    deleteButton.innerText = "🗑️ Delete";
-                    deleteButton.onclick = function() { confirmDeleteEmail(email.id, row); };
-                    row.insertCell(2).appendChild(deleteButton);
-                });
-
-                document.getElementById("emailsTable").classList.remove("hidden");
-            })
-            .catch(error => console.error('Error:', error));
+            .then(data => alert(data.message || "Scam emails found!"));
         }
 
-        function confirmDeleteEmail(emailId, row) {
-            if (confirm("⚠️ Are you sure you want to delete this scam email?")) {
-                deleteEmail(emailId, row);
-            }
-        }
-
-        function deleteEmail(emailId, row) {
-            fetch(`${backendUrl}/delete_email`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ email_id: emailId })
-            })
-            .then(response => response.json())
-            .then(data => {
-                alert(data.message);
-                row.remove();
-            })
-            .catch(error => console.error('Error:', error));
-        }
-
-        // ✅ Check if user is logging in after redirect
         checkLoginStatus();
     </script>
 
